@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nightwatch — the on-call operator that only wakes you for a real fire</title>
+<meta name="description" content="A free, drop-in operator folder for Claude. It reads an alert and makes the call your on-call engineer would make in 90 seconds: PAGE, TICKET, SUPPRESS, or FLAG — then drafts the message. Built for the team without an AIOps budget." />
+
+<!-- Open Graph / social -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Nightwatch — the on-call operator that only wakes you for a real fire" />
+<meta property="og:description" content="A free, drop-in operator folder for Claude. It decides on business impact, not the alert label — so the one customer paying you $80k/yr outranks a global 0.2% blip. PAGE, TICKET, SUPPRESS, or FLAG, every time." />
+<meta property="og:image" content="og-image.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Nightwatch — the on-call operator that only wakes you for a real fire" />
+<meta name="twitter:description" content="A free, drop-in operator folder for Claude. Decides PAGE / TICKET / SUPPRESS / FLAG on business impact, not the alert label." />
+<meta name="twitter:image" content="og-image.png" />
+
+<style>
+  :root{
+    --bg:#0a0e14; --bg-2:#0d131c; --panel:#111927; --panel-2:#0f1623;
+    --ink:#e7edf5; --muted:#93a2b8; --faint:#5d6b80; --line:#1e2a3b;
+    --page:#f0506e; --sev2:#f0883e; --ticket:#e7c14a; --suppress:#5b6b82; --quiet:#39c08a; --flag:#a98bf5;
+    --accent:#6ea8fe;
+    --radius:14px; --maxw:1080px;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono",ui-monospace,"JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:
+      radial-gradient(1200px 600px at 78% -8%, rgba(110,168,254,.10), transparent 60%),
+      radial-gradient(900px 500px at 10% 0%, rgba(57,192,138,.06), transparent 55%),
+      var(--bg);
+    color:var(--ink);font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased;letter-spacing:.1px;
+  }
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  a{color:inherit}
+  .btn{display:inline-flex;align-items:center;gap:.55rem;padding:.85rem 1.4rem;border-radius:11px;
+    font-weight:600;font-size:.97rem;text-decoration:none;transition:transform .15s ease,box-shadow .15s ease,background .15s ease;border:1px solid transparent}
+  .btn-primary{background:linear-gradient(180deg,#e8eef8,#cdd9ec);color:#0a0e14;box-shadow:0 8px 30px rgba(140,170,220,.18)}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 38px rgba(140,170,220,.28)}
+  .btn-ghost{border-color:var(--line);color:var(--ink);background:rgba(255,255,255,.015)}
+  .btn-ghost:hover{border-color:#33455e;background:rgba(255,255,255,.04)}
+  .eyebrow{font-size:.78rem;letter-spacing:.22em;text-transform:uppercase;color:var(--faint);font-weight:600}
+
+  /* nav */
+  nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+  .brand{display:flex;align-items:center;gap:.6rem;font-weight:700;letter-spacing:.02em}
+  .dot{width:11px;height:11px;border-radius:50%;background:var(--quiet);position:relative}
+  .dot::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid var(--quiet);opacity:.5;animation:pulse 3.2s ease-out infinite}
+  @keyframes pulse{0%{transform:scale(.6);opacity:.55}70%{opacity:0}100%{transform:scale(1.9);opacity:0}}
+  @media (prefers-reduced-motion:reduce){.dot::after{animation:none;opacity:.3}}
+  nav .links{display:flex;gap:1.4rem;font-size:.92rem;color:var(--muted)}
+  nav .links a{text-decoration:none}nav .links a:hover{color:var(--ink)}
+  @media(max-width:640px){nav .links{display:none}}
+
+  /* hero */
+  header{padding:64px 0 28px}
+  h1{font-size:clamp(2.4rem,6vw,4.1rem);line-height:1.04;letter-spacing:-.02em;margin:.5rem 0 0;font-weight:800}
+  h1 .q{color:var(--quiet)}
+  .lede{font-size:clamp(1.05rem,2.2vw,1.28rem);color:var(--muted);max-width:46ch;margin:1.2rem 0 0}
+  .cta{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:2rem}
+  .meta-line{margin-top:1.4rem;font-size:.86rem;color:var(--faint)}
+  .meta-line b{color:var(--muted);font-weight:600}
+
+  section{padding:54px 0;border-top:1px solid var(--line)}
+  h2{font-size:clamp(1.5rem,3.2vw,2rem);letter-spacing:-.01em;margin:.4rem 0 .2rem;font-weight:750}
+  .sec-sub{color:var(--muted);max-width:60ch;margin:.3rem 0 0}
+
+  /* problem */
+  .prob{display:grid;grid-template-columns:1.1fr 1fr;gap:34px;align-items:center}
+  @media(max-width:760px){.prob{grid-template-columns:1fr}}
+  .prob p{color:var(--muted);font-size:1.02rem}
+  .prob .big{color:var(--ink);font-size:1.18rem;font-weight:600;line-height:1.5}
+  .stat{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,var(--panel),var(--panel-2));padding:24px}
+  .stat .n{font-size:2rem;font-weight:800;letter-spacing:-.02em}
+  .stat .l{color:var(--muted);font-size:.92rem;margin-top:.2rem}
+
+  /* outcomes */
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:26px}
+  @media(max-width:760px){.grid4{grid-template-columns:repeat(2,1fr)}}
+  .oc{border:1px solid var(--line);border-radius:var(--radius);padding:18px;background:var(--panel-2);position:relative;overflow:hidden}
+  .oc .bar{position:absolute;left:0;top:0;bottom:0;width:4px}
+  .oc h3{margin:.1rem 0 .35rem;font-size:1.02rem;display:flex;align-items:center;gap:.5rem}
+  .oc p{margin:0;color:var(--muted);font-size:.9rem}
+  .chip{font-family:var(--mono);font-size:.7rem;font-weight:600}
+
+  /* demo */
+  .demo-note{font-size:.82rem;color:var(--faint);margin-top:.5rem}
+  .demo-note b{color:var(--quiet);font-weight:600}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:26px}
+  @media(max-width:880px){.cards{grid-template-columns:1fr}}
+  .card{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,var(--panel),var(--panel-2));overflow:hidden;display:flex;flex-direction:column}
+  .card .in{padding:16px 16px 12px;border-bottom:1px dashed var(--line)}
+  .card .in .src{font-family:var(--mono);font-size:.74rem;color:var(--faint);text-transform:uppercase;letter-spacing:.06em}
+  .card .in .alert{font-size:.92rem;color:var(--ink);margin-top:.4rem}
+  .card .arrow{text-align:center;color:var(--faint);font-size:.85rem;padding:6px 0}
+  .card .out{padding:4px 16px 16px;display:flex;flex-direction:column;gap:.55rem}
+  .badge{display:inline-flex;align-items:center;gap:.45rem;align-self:flex-start;padding:.32rem .7rem;border-radius:999px;font-weight:700;font-size:.82rem;font-family:var(--mono)}
+  .card .body{font-size:.9rem;color:var(--muted)}
+  .card .why{font-size:.85rem;color:var(--ink);border-left:2px solid var(--line);padding-left:.7rem;font-style:italic}
+  .b-sup{background:rgba(91,107,130,.16);color:#aab8cc} .bar-sup{background:var(--suppress)}
+  .b-tic{background:rgba(231,193,74,.14);color:var(--ticket)} .bar-tic{background:var(--ticket)}
+  .b-pag{background:rgba(240,136,62,.15);color:var(--sev2)} .bar-pag{background:var(--sev2)}
+
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:26px;counter-reset:s}
+  @media(max-width:760px){.steps{grid-template-columns:1fr}}
+  .step{border:1px solid var(--line);border-radius:var(--radius);padding:20px;background:var(--panel-2)}
+  .step::before{counter-increment:s;content:"0" counter(s);font-family:var(--mono);font-size:.85rem;color:var(--accent);font-weight:700}
+  .step h3{margin:.5rem 0 .3rem;font-size:1.05rem}
+  .step p{margin:0;color:var(--muted);font-size:.92rem}
+
+  /* architecture */
+  .arch{display:grid;grid-template-columns:1fr 1.1fr;gap:30px;align-items:center}
+  @media(max-width:760px){.arch{grid-template-columns:1fr}}
+  pre.tree{font-family:var(--mono);font-size:.82rem;line-height:1.75;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);padding:20px;color:var(--muted);overflow:auto;margin:0}
+  pre.tree .f{color:var(--ink)}
+  pre.tree .c{color:var(--faint)}
+
+  /* honest band */
+  .honest{text-align:center;background:linear-gradient(180deg,rgba(57,192,138,.06),transparent);border-radius:18px;border:1px solid var(--line);padding:40px 24px;margin-top:20px}
+  .honest h2{margin-top:0}
+  .honest p{color:var(--muted);max-width:54ch;margin:.6rem auto 0}
+
+  footer{padding:48px 0 70px;text-align:center;color:var(--faint);font-size:.88rem;border-top:1px solid var(--line)}
+  footer .cta{justify-content:center}
+  footer .fine{margin-top:1.6rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav>
+    <div class="brand"><span class="dot"></span> Nightwatch</div>
+    <div class="links">
+      <a href="#demo">See it decide</a>
+      <a href="#how">How it works</a>
+      <a href="#arch">Architecture</a>
+      <a href="https://github.com/NFTYoginis/nightwatch">GitHub</a>
+    </div>
+  </nav>
+
+  <header>
+    <span class="eyebrow">A first-pass on-call operator for Claude</span>
+    <h1>The pager that stays <span class="q">quiet</span><br>unless it's a real fire.</h1>
+    <p class="lede">Nightwatch reads an incoming alert and makes the call your on-call engineer would make in the first 90 seconds — then drafts the message. Built for the team without an AIOps budget, where the scarcest resource is uninterrupted sleep.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/NFTYoginis/nightwatch">Get it free on GitHub →</a>
+      <a class="btn btn-ghost" href="#demo">Watch it make three calls</a>
+    </div>
+    <p class="meta-line"><b>It decides — it never kicks the question back.</b> &nbsp;PAGE · TICKET · SUPPRESS · FLAG, every time.</p>
+  </header>
+
+  <section id="problem">
+    <span class="eyebrow">The problem</span>
+    <h2>Alerts all night. Most of them are nothing.</h2>
+    <div class="prob" style="margin-top:24px">
+      <div>
+        <p class="big">One to three people share the pager. There's no NOC, no SRE on staff, no AIOps platform — just a phone that buzzes at 3am for a disk-space warning that always clears itself.</p>
+        <p>So you do the math every on-call does: read the alert, guess the blast radius, decide in 90 seconds whether it's worth waking up for. The decision isn't hard. The <em>volume</em> is what burns you out — and the night it actually matters is the night you've learned to swipe the buzz away.</p>
+      </div>
+      <div class="stat">
+        <div class="n">90 sec</div>
+        <div class="l">the triage call a human makes per alert</div>
+        <div class="n" style="margin-top:1.1rem">0</div>
+        <div class="l">of those calls should require waking that human</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="outcomes">
+    <span class="eyebrow">What it does</span>
+    <h2>Every signal leaves with one decision.</h2>
+    <p class="sec-sub">No "here's what I found, what do you want to do?" An operator decides and routes the work. You come back to a correct page — or a quiet night.</p>
+    <div class="grid4">
+      <div class="oc"><span class="bar bar-pag"></span><h3><span class="chip" style="color:var(--page)">●</span> PAGE</h3><p>A real fire. Wake a human now, with the blast radius and a first check already drafted.</p></div>
+      <div class="oc"><span class="bar bar-tic"></span><h3><span class="chip" style="color:var(--ticket)">●</span> TICKET</h3><p>Real, but it can wait for daylight. Drafted with severity, impact, and a suggested owner.</p></div>
+      <div class="oc"><span class="bar bar-sup"></span><h3><span class="chip" style="color:var(--suppress)">●</span> SUPPRESS</h3><p>Known noise or self-healing. Logged with the exact tripwire that would change its mind.</p></div>
+      <div class="oc"><span class="bar" style="background:var(--flag)"></span><h3><span class="chip" style="color:var(--flag)">●</span> FLAG</h3><p>Genuinely your call — rare. It holds a safe default and asks one specific question.</p></div>
+    </div>
+  </section>
+
+  <section id="demo">
+    <span class="eyebrow">See it decide</span>
+    <h2>Three real alerts. Three different calls.</h2>
+    <p class="sec-sub">Severity is computed from business impact, not the alert's own label — so a global 0.2% blip can outrank a "CRITICAL," and a "CRITICAL" can be safely muted.</p>
+    <p class="demo-note"><b>Real outputs</b> — produced by the folder running in Claude, not mockups.</p>
+    <div class="cards">
+
+      <div class="card">
+        <div class="in">
+          <div class="src">Prometheus · 03:10 UTC</div>
+          <div class="alert">Disk usage on <code>prod-db-1</code> at 88%. Severity: warning.</div>
+        </div>
+        <div class="arrow">↓</div>
+        <div class="out">
+          <span class="badge b-sup">⚪ SUPPRESS</span>
+          <div class="body">Known nightly log-rotation spike (normal ≤92%, clears by 03:30). <b style="color:var(--ink)">Escalate-if:</b> &gt;92%, or not below 80% by 03:45, or free space &lt;5%.</div>
+          <div class="why">Known self-healing pattern within its window — suppress the human cost, keep the safety net.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="in">
+          <div class="src">Sentry · 14:30 local</div>
+          <div class="alert">500s on <code>/settings/profile</code>, ~3% of users, stable 20 min, workaround: refresh.</div>
+        </div>
+        <div class="arrow">↓</div>
+        <div class="out">
+          <span class="badge b-tic">🟡 TICKET · SEV3</span>
+          <div class="body">Non-core page, degraded not down, workaround confirmed, stable. Queue this week. <span style="color:var(--faint)">(Check: any deploy in the last 30 min?)</span></div>
+          <div class="why">No reason to pull someone off focus — a fix-in-daylight bug, and daylight is now.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="in">
+          <div class="src">Datadog · 02:40 UTC</div>
+          <div class="alert">503s on the API write path, 1.5% globally, stable — all from <code>org_2290</code>.</div>
+        </div>
+        <div class="arrow">↓</div>
+        <div class="out">
+          <span class="badge b-pag">🟠 PAGE · SEV2 · SLA</span>
+          <div class="body">1.5% globally = <b style="color:var(--ink)">100% of Acme Co.'s</b> write path (Priority SLA, 4-hr clock running). Paging on-call + account owner.</div>
+          <div class="why">Raw volume is small; business impact isn't. Severity is about <em>who's</em> down, not how many.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="how">
+    <span class="eyebrow">How it works</span>
+    <h2>A minute to set up. Then it stands the watch.</h2>
+    <div class="steps">
+      <div class="step"><h3>Drop in the folder</h3><p>Put the Nightwatch folder into a Claude Project. Claude becomes the operator — identity, rules, examples, and reference tables all loaded.</p></div>
+      <div class="step"><h3>Teach it your world, once</h3><p>Fill the <code>reference/</code> templates with your services, severity thresholds, SLA customers, and recurring false alarms. ~30 minutes.</p></div>
+      <div class="step"><h3>Paste any alert</h3><p>It returns one decision, the routed action or drafted message, and a one-line "why" you can audit or override in five seconds.</p></div>
+    </div>
+  </section>
+
+  <section id="arch">
+    <span class="eyebrow">The methodology</span>
+    <h2>Folders as architecture. Each file does one job.</h2>
+    <div class="arch" style="margin-top:24px">
+      <pre class="tree">nightwatch/
+├── <span class="f">identity.md</span>      <span class="c"># who it is, what it refuses</span>
+├── <span class="f">rules.md</span>         <span class="c"># the decision logic (the heart)</span>
+├── <span class="f">examples.md</span>      <span class="c"># worked calls + edge cases</span>
+├── <span class="f">README.md</span>        <span class="c"># how to use it</span>
+└── reference/
+    ├── <span class="f">severity-matrix.md</span>   <span class="c"># blast × impact × trend</span>
+    ├── <span class="f">routing-table.md</span>     <span class="c"># sev → who, when</span>
+    ├── <span class="f">known-noise.md</span>       <span class="c"># your false alarms</span>
+    ├── <span class="f">sla-customers.md</span>     <span class="c"># who overrides the metrics</span>
+    └── <span class="f">response-templates.md</span><span class="c"># the drafted artifacts</span></pre>
+      <div>
+        <p class="sec-sub" style="margin-bottom:1rem">The decision logic is a short-circuiting flow: security and data-loss gates fire first, then noise, then dedup, then severity from the matrix, then the SLA override. The first step that produces an outcome wins.</p>
+        <p class="sec-sub">Nothing is a black box. The rules are plain English in a file you can read, edit, and trust — which is the whole point.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="honest">
+    <span class="eyebrow">No catch</span>
+    <h2>It's a folder, not a SaaS.</h2>
+    <p>Nightwatch is free. There's no account, no agent to install, no dashboard, no per-seat pricing. It's a folder of plain Markdown you drop into Claude — and it's running in a minute. Take it, fork it, make it yours.</p>
+    <div class="cta" style="justify-content:center;margin-top:1.8rem">
+      <a class="btn btn-primary" href="https://github.com/NFTYoginis/nightwatch">Get Nightwatch on GitHub →</a>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="brand" style="justify-content:center;margin-bottom:1rem"><span class="dot"></span> Nightwatch</div>
+    <p>An operator built on interpretable-context methodology — folders as architecture.</p>
+    <p class="fine">Part of <b>The Quiet AI</b> · decision logic you can read.</p>
+  </div>
+</footer>
+</body>
+</html>

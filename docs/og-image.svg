@@ -1,0 +1,50 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" font-family="Inter, -apple-system, 'Segoe UI', Roboto, sans-serif">
+  <defs>
+    <radialGradient id="g1" cx="80%" cy="-5%" r="70%">
+      <stop offset="0%" stop-color="#6ea8fe" stop-opacity="0.16"/>
+      <stop offset="60%" stop-color="#6ea8fe" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g2" cx="8%" cy="0%" r="60%">
+      <stop offset="0%" stop-color="#39c08a" stop-opacity="0.10"/>
+      <stop offset="55%" stop-color="#39c08a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#cdd9ec"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="#0a0e14"/>
+  <rect width="1200" height="630" fill="url(#g1)"/>
+  <rect width="1200" height="630" fill="url(#g2)"/>
+  <rect x="0.5" y="0.5" width="1199" height="629" fill="none" stroke="#1e2a3b"/>
+
+  <!-- brand -->
+  <g transform="translate(80,78)">
+    <circle cx="9" cy="9" r="9" fill="#39c08a"/>
+    <circle cx="9" cy="9" r="16" fill="none" stroke="#39c08a" stroke-opacity="0.4"/>
+    <text x="34" y="16" fill="#e7edf5" font-size="24" font-weight="700" letter-spacing="0.5">Nightwatch</text>
+  </g>
+
+  <!-- eyebrow -->
+  <text x="80" y="250" fill="#5d6b80" font-size="20" font-weight="600" letter-spacing="4">A FIRST-PASS ON-CALL OPERATOR FOR CLAUDE</text>
+
+  <!-- headline -->
+  <text x="78" y="332" fill="url(#ink)" font-size="76" font-weight="800" letter-spacing="-1.5">The pager that stays <tspan fill="#39c08a">quiet</tspan></text>
+  <text x="78" y="416" fill="url(#ink)" font-size="76" font-weight="800" letter-spacing="-1.5">unless it's a real fire.</text>
+
+  <!-- subline -->
+  <text x="80" y="478" fill="#93a2b8" font-size="26" font-weight="400">It decides on business impact, not the alert label —</text>
+  <text x="80" y="514" fill="#93a2b8" font-size="26" font-weight="400">then drafts the page. PAGE · TICKET · SUPPRESS · FLAG.</text>
+
+  <!-- outcome chips -->
+  <g transform="translate(80,556)" font-size="19" font-weight="700" font-family="ui-monospace, Menlo, monospace">
+    <g><rect x="0" y="0" width="118" height="34" rx="17" fill="#f0883e" fill-opacity="0.15"/><text x="59" y="23" fill="#f0883e" text-anchor="middle">PAGE</text></g>
+    <g transform="translate(130,0)"><rect x="0" y="0" width="118" height="34" rx="17" fill="#e7c14a" fill-opacity="0.14"/><text x="59" y="23" fill="#e7c14a" text-anchor="middle">TICKET</text></g>
+    <g transform="translate(260,0)"><rect x="0" y="0" width="150" height="34" rx="17" fill="#5b6b82" fill-opacity="0.18"/><text x="75" y="23" fill="#aab8cc" text-anchor="middle">SUPPRESS</text></g>
+    <g transform="translate(422,0)"><rect x="0" y="0" width="100" height="34" rx="17" fill="#a98bf5" fill-opacity="0.15"/><text x="50" y="23" fill="#a98bf5" text-anchor="middle">FLAG</text></g>
+  </g>
+
+  <!-- free tag -->
+  <text x="1120" y="572" fill="#5d6b80" font-size="20" font-weight="600" text-anchor="end">Free · drop-in folder · The Quiet AI</text>
+</svg>
