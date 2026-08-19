@@ -129,6 +129,29 @@
   footer{padding:48px 0 70px;text-align:center;color:var(--faint);font-size:.88rem;border-top:1px solid var(--line)}
   footer .cta{justify-content:center}
   footer .fine{margin-top:1.6rem}
+
+/* --- The Quiet Ai - build-page capture strip (added 2026-08-19) ---------------
+   Palette-inheriting: currentColor plus the page's own --accent where one exists.
+   Scoped entirely under .tqai-strip - restyles nothing above it.
+   Copy is canon: root-rebuild return 2026-08-19 section 8. */
+.tqai-strip{border-top:1px solid rgba(128,128,128,.28);padding:60px 0 68px;margin:0}
+.tqai-strip .tqai-strip-in{max-width:1080px;margin:0 auto}
+/* Gutter only when the strip sits at top level. On a page whose footer is nested
+   inside an already-padded container (thai-coach-for-ai-world), adding our own
+   gutter double-pads and pushes the text 38px right of the column above it.
+   Scoping to body > lets the nested case inherit the parent's gutter instead. */
+body > .tqai-strip .tqai-strip-in{padding:0 24px}
+.tqai-strip h2{margin:0 0 14px;font-size:clamp(23px,3.4vw,30px);line-height:1.22;
+  letter-spacing:-.01em}
+.tqai-strip p{margin:0 0 28px;max-width:56ch;font-size:17px;line-height:1.6;opacity:.8}
+/* CTA takes the page's ink, not its --accent. Measured 2026-08-19: five pages carry an
+   accent that lands at 2.76-4.43:1 on their own ground, so accent-as-text-colour fails
+   WCAG AA on them. Ink inherits and clears 12:1 everywhere. */
+.tqai-strip .tqai-strip-cta{display:inline-block;padding:13px 24px;
+  border:1px solid currentColor;border-radius:8px;text-decoration:none;font-weight:600;
+  font-size:16px;color:inherit;transition:background-color .18s ease}
+.tqai-strip .tqai-strip-cta:hover,.tqai-strip .tqai-strip-cta:focus-visible{
+  background:rgba(128,128,128,.14)}
 </style>
 </head>
 <body>
@@ -276,6 +299,15 @@
 
 </div>
 
+<!-- The Quiet Ai - build-page capture strip. Copy is canon (root-rebuild return
+     2026-08-19 section 8). Added because 0 of 24 build pages had a return path. -->
+<section class="tqai-strip" aria-labelledby="tqai-strip-title">
+  <div class="tqai-strip-in">
+    <h2 id="tqai-strip-title">Want this one built around your business instead?</h2>
+    <p>This one&rsquo;s free and yours to keep. If you&rsquo;d rather not do it yourself &mdash; tell me the job it would be doing for you.</p>
+    <a class="tqai-strip-cta" href="https://thequietai.com/#contact">Tell me the job&nbsp;&rarr;</a>
+  </div>
+</section>
 <footer>
   <div class="wrap">
     <div class="brand" style="justify-content:center;margin-bottom:1rem"><span class="dot"></span> Nightwatch</div>
